@@ -1,0 +1,91 @@
+**Résumé de l'installation et du fonctionnement de ****`autotune_tmc`**** sous Klipper (Linux + MKS Robin Nano)**
+
+---
+
+**Objectif** : Activer et faire fonctionner le module `autotune_tmc` pour affiner automatiquement les paramètres des drivers TMC.
+
+### 1. Installation du module `autotune_tmc`
+
+- Clonage du repo `https://github.com/andrewmcgr/klipper_tmc_autotune.git` dans `~/klipper_tmc_autotune`
+- Copie des fichiers suivants dans le dossier `klipper/klippy/extras/` :
+  - `autotune_tmc.py`
+  - `motor_constants.py`
+  - `motor_database.cfg`
+- Modification du fichier `klippy/extras/__init__.py` :
+  ```python
+  import autotune_tmc
+  ```
+
+### 2. Gestion via Git (important pour les mises à jour)
+
+- Ajouter les fichiers au suivi Git :
+  ```bash
+  git add klippy/extras/autotune_tmc.py klippy/extras/motor_constants.py klippy/extras/motor_database.cfg
+  ```
+- Configurer l'identité Git si ce n'est pas déjà fait :
+  ```bash
+  git config --global user.name "Ton Nom"
+  git config --global user.email "ton@mail.com"
+  ```
+- Commit :
+  ```bash
+  git commit -m "Ajout des fichiers nécessaires pour TMC Autotune"
+  ```
+
+### 3. Compilation & Flash MCU
+
+- Nettoyer et recompiler :
+  ```bash
+  make clean
+  make
+  ```
+- Reflasher la carte MKS Robin Nano V3.1 via sa méthode habituelle (SD Card + firmware.bin renommé)
+
+### 4. Configuration dans `printer.cfg`
+
+Exemple pour chaque stepper :
+
+```ini
+[autotune_tmc stepper_x]
+motor: oukeda-17hs4401
+voltage: 12.0
+```
+
+> ⚠ Par défaut, le module présume une alimentation en 24V, donc bien préciser `voltage: 12.0` si besoin !
+
+### 5. Diagnostic et vérification
+
+- La commande `AUTOTUNE_TMC STEPPER=stepper_x` ne renvoie rien en console, **mais** les logs montrent l'exécution en arrière-plan.
+- Utiliser `DUMP_TMC STEPPER=stepper_x` avant et après pour comparer les réglages appliqués.
+- Inspecter `klippy.log` pour voir des lignes comme :
+  ```
+  autotune_tmc set stepper_x pwm_freq=2
+  autotune_tmc stepper_x ncycles=219 pfdcycles=73
+  autotune_tmc set stepper_x toff=1
+  ...
+  ```
+
+### 6. Statut final
+
+- Module fonctionnel **malgré l'absence de retour console**.
+- Application automatique des paramètres au démarrage si la config est présente.
+- Possibilité de revenir facilement en cas de souci (via suppression de la section `[autotune_tmc ...]`)
+
+---
+
+**Remarques** :
+
+- Le module peut se montrer discret voire silencieux à l'exécution, mais son effet est visible dans les logs et les réglages TMC.
+- Inutile de forcer l'utilisation de la commande manuelle, le fonctionnement automatique est suffisant.
+
+1. Installation sur Linux Mint
+Le script d’installation officiel (install.sh) fonctionne aussi sous Linux Mint, à condition que Klipper soit installé dans le dossier utilisateur (par défaut ~/klipper) et que vous utilisiez le même utilisateur pour Klipper, Moonraker et l’installation du plugin15.
+
+Ouvrez un terminal sur votre machine Linux Mint.
+
+Exécutez :
+
+wget -O - https://raw.githubusercontent.com/andrewmcgr/klipper_tmc_autotune/main/install.sh | bash
+
+Ce script va cloner le dépôt dans ~/klipper_tmc_autotune et créer un lien symbolique dans le dossier klippy/extras/ ou klippy/plugins/ de votre installation Klipper, selon ce qui existe15.
+
